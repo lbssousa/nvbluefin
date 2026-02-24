@@ -1,95 +1,85 @@
-# finpilot
+# nvbluefin
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A custom [Bluefin](https://projectbluefin.io)-based bootc OS image with inclusion of some legacy parts, built on the [Universal Blue](https://universal-blue.org/) platform.
 
-This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
+This image uses the **multi-stage build architecture** from [@projectbluefin/distroless](https://github.com/projectbluefin/distroless), combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
 
-**Unlike previous templates, you are not modifying Bluefin and making changes.**: You are assembling your own Bluefin in the same exact way that Bluefin, Aurora, and Bluefin LTS are built. This is way more flexible and better for everyone since the image-agnostic and desktop things we love about Bluefin lives in @projectbluefin/common. 
+## What Makes this Raptor Different?
 
- Instead, you create your own OS repository based on this template, allowing full customization while leveraging Bluefin's robust build system and shared components.
+Here are the changes from [Bluefin](https://projectbluefin.io). This image is based on `ghcr.io/ublue-os/silverblue-main` and includes these customizations:
 
-> Be the one who moves, not the one who is moved.
+### Added Packages (Build-time)
+- System packages installed at build-time as needed for legacy hardware support
 
-## Guided Copilot Mode
+### Added Applications (Runtime)
+- **CLI Tools (Homebrew)**: See [custom/brew/default.Brewfile](custom/brew/default.Brewfile)
+- **GUI Apps (Flatpak)**: See [custom/flatpaks/default.preinstall](custom/flatpaks/default.preinstall)
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+### Configuration Changes
+- `podman.socket` systemd service enabled by default
 
-1. Click the green "Use this as a template" button and create a new repository
-2. Select your owner, pick a repo name for your OS, and a description
-3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
-
-```
-Use @projectbluefin/finpilot as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running.  Ensure the README has the github setup instructions for cosign and the other steps required to finish the task.
-```
+*Last updated: 2026-02-24*
 
 ## What's Included
 
 ### Build System
 - Automated builds via GitHub Actions on every commit
-- Awesome self hosted Renovate setup that keeps all your images and actions up to date.
-- Automatic cleanup of old images (90+ days) to keep it tidy
+- Renovate bot keeps all images and actions up to date automatically
+- Automatic cleanup of old images (90+ days) to keep things tidy
 - Pull request workflow - test changes before merging to main
   - PRs build and validate before merge
   - `main` branch builds `:stable` images
 - Validates your files on pull requests so you never break a build:
-  - Brewfile, Justfile, ShellCheck, Renovate config, and it'll even check to make sure the flatpak you add exists on FlatHub
+  - Brewfile, Justfile, ShellCheck, Renovate config, and Flatpak app IDs
 - Production Grade Features
-  - Container signing and SBOM Generation
-  - See checklist below to enable these as they take some manual configuration
+  - Optional container signing and SBOM Generation
 
 ### Homebrew Integration
 - Pre-configured Brewfiles for easy package installation and customization
-- Includes curated collections: development tools, fonts, CLI utilities. Go nuts.
+- Includes curated collections: development tools, fonts, CLI utilities
 - Users install packages at runtime with `brew bundle`, aliased to premade `ujust commands`
 - See [custom/brew/README.md](custom/brew/README.md) for details
 
 ### Flatpak Support
-- Ship your favorite flatpaks
+- Pre-configured Flatpak applications
 - Automatically installed on first boot after user setup
 - See [custom/flatpaks/README.md](custom/flatpaks/README.md) for details
 
 ### ujust Commands
 - User-friendly command shortcuts via `ujust`
-- Pre-configured examples for app installation and system maintenance for you to customize
+- Pre-configured examples for app installation and system maintenance
 - See [custom/ujust/README.md](custom/ujust/README.md) for details
 
 ### Build Scripts
 - Modular numbered scripts (10-, 20-, 30-) run in order
-- Example scripts included for third-party repositories and desktop replacement
 - Helper functions for safe COPR usage
 - See [build/README.md](build/README.md) for details
 
-## Quick Start
+## Deploy
 
-### 1. Create Your Repository
+Switch to nvbluefin from any existing bootc-compatible system:
 
-Click "Use this template" to create a new repository from this template.
+```bash
+sudo bootc switch --transport registry ghcr.io/lbssousa/nvbluefin:stable
+sudo systemctl reboot
+```
 
-### 2. Rename the Project
+## Quick Start for Contributors
 
-Important: Change `finpilot` to your repository name in these 6 files:
-
-1. `Containerfile` (line 4): `# Name: your-repo-name`
-2. `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "your-repo-name")`
-3. `README.md` (line 1): `# your-repo-name`
-4. `artifacthub-repo.yml` (line 5): `repositoryID: your-repo-name`
-5. `custom/ujust/README.md` (~line 175): `localhost/your-repo-name:stable`
-6. `.github/workflows/clean.yml` (line 23): `packages: your-repo-name`
-
-### 3. Enable GitHub Actions
+### 1. Enable GitHub Actions
 
 - Go to the "Actions" tab in your repository
 - Click "I understand my workflows, go ahead and enable them"
 
-Your first build will start automatically! 
+Your first build will start automatically!
 
 Note: Image signing is disabled by default. Your images will build successfully without any signing keys. Once you're ready for production, see "Optional: Enable Image Signing" below.
 
-### 4. Customize Your Image
+### 2. Customize Your Image
 
-Choose your base image in `Containerfile` (line 23):
+Choose your base image in `Containerfile`:
 ```dockerfile
-FROM ghcr.io/ublue-os/bluefin:stable
+FROM ghcr.io/ublue-os/silverblue-main:latest
 ```
 
 Add your packages in `build/10-build.sh`:
@@ -102,25 +92,17 @@ Customize your apps:
 - Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
 - Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
 
-### 5. Development Workflow
+### 3. Development Workflow
 
 All changes should be made via pull requests:
 
 1. Open a pull request on GitHub with the change you want.
-3. The PR will automatically trigger:
+2. The PR will automatically trigger:
    - Build validation
    - Brewfile, Flatpak, Justfile, and shellcheck validation
    - Test image build
-4. Once checks pass, merge the PR
-5. Merging triggers publishes a `:stable` image
-
-### 6. Deploy Your Image
-
-Switch to your image:
-```bash
-sudo bootc switch ghcr.io/your-username/your-repo-name:stable
-sudo systemctl reboot
-```
+3. Once checks pass, merge the PR
+4. Merging triggers publishes a `:stable` image
 
 ## Optional: Enable Image Signing
 
@@ -263,7 +245,7 @@ Your workflow will:
 
 Users can verify your images with:
 ```bash
-cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
+cosign verify --key cosign.pub ghcr.io/lbssousa/nvbluefin:stable
 ```
 
 ## Detailed Guides
