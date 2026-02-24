@@ -2,23 +2,21 @@
 
 ## Initial Setup
 
-### 1. Rename Template
-- [ ] Update `finpilot` to your name in: Containerfile, Justfile, README.md, artifacthub-repo.yml
-
-### 2. Enable GitHub Actions
+### 1. Enable GitHub Actions
+- [x] Template renamed: `nvbluefin` in Containerfile, Justfile, README.md, artifacthub-repo.yml
 - [ ] Settings → Actions → General → Enable workflows
 - [ ] Set "Read and write permissions"
 
-### 3. First Push
+### 2. First Push
 ```bash
 git add .
 git commit -m "feat: initial customization"
 git push origin main
 ```
 
-### 4. Deploy
+### 3. Deploy
 ```bash
-sudo bootc switch --transport registry ghcr.io/YOUR_USERNAME/YOUR_REPO:stable
+sudo bootc switch --transport registry ghcr.io/lbssousa/nvbluefin:stable
 sudo systemctl reboot
 ```
 
