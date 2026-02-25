@@ -31,7 +31,18 @@ fi
 dnf5 install -y /tmp/akmods-rpms/ublue-os/ublue-os-nvidia-addons-*.rpm
 
 # Install multilib (32-bit) mesa packages for compatibility
+# NOTE: Both x86_64 and i686 versions are installed in a single transaction to avoid
+# file conflicts when the negativo17-fedora-multimedia repo (enabled by ublue-os-nvidia-addons)
+# provides newer mesa versions than the base image. Installing both architectures together
+# ensures dnf5 upgrades the x86_64 packages to match the i686 versions from negativo17.
 MULTILIB=(
+    mesa-dri-drivers
+    mesa-filesystem
+    mesa-libEGL
+    mesa-libGL
+    mesa-libgbm
+    mesa-va-drivers
+    mesa-vulkan-drivers
     mesa-dri-drivers.i686
     mesa-filesystem.i686
     mesa-libEGL.i686

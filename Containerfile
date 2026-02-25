@@ -27,8 +27,9 @@
 ###############################################################################
 
 # Import pre-built NVIDIA kernel modules (signed for Secure Boot)
+# Tag must match the Fedora version of the base image (silverblue-main)
 # Note: Renovate can automatically update this tag to a SHA-256 digest
-FROM ghcr.io/ublue-os/akmods-nvidia:main-42 AS akmods_nvidia
+FROM ghcr.io/ublue-os/akmods-nvidia:main-43 AS akmods_nvidia
 
 # Context stage - combine local and imported OCI container resources
 FROM scratch AS ctx
