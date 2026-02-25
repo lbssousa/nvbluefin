@@ -9,7 +9,12 @@ This image uses the **multi-stage build architecture** from [@projectbluefin/dis
 Here are the changes from [Bluefin](https://projectbluefin.io). This image is based on `ghcr.io/ublue-os/silverblue-main` and includes these customizations:
 
 ### Added Packages (Build-time)
-- System packages installed at build-time as needed for legacy hardware support
+- **NVIDIA Proprietary Driver** (current version: 580.126.18) — Pre-built kernel modules from [@ublue-os/akmods-nvidia](https://github.com/ublue-os/akmods), signed for Secure Boot. Includes driver, CUDA libraries, VA-API support, container toolkit, and 32-bit multilib compatibility packages. Installed following the same pattern used by previous Bluefin versions via [@ublue-os/hwe](https://github.com/ublue-os/hwe).
+- **Epson Inkjet Printer Driver (ESC/P-R) for Linux** (current version: 1.8.7) — Generic inkjet printer driver supporting a wide range of Epson printers
+- **Epson Printer Utility for Linux** (current version: 1.2.2) — Printer management utility for ink levels, nozzle checks, and head cleaning
+- **Epson Scan2** (current version: 6.7.84.0) — Scanner driver supporting Epson flatbed and document scanners
+
+Epson packages are automatically downloaded from the official [Epson Download Center](https://download-center.epson.com/) API during the build process.
 
 ### Added Applications (Runtime)
 - **CLI Tools (Homebrew)**: See [custom/brew/default.Brewfile](custom/brew/default.Brewfile)
@@ -17,6 +22,8 @@ Here are the changes from [Bluefin](https://projectbluefin.io). This image is ba
 
 ### Configuration Changes
 - `podman.socket` systemd service enabled by default
+- `ublue-nvctk-cdi.service` enabled for NVIDIA container toolkit CDI support
+- NVIDIA initramfs configured with forced driver loading for reliable boot
 
 *Last updated: 2026-02-24*
 

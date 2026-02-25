@@ -15,13 +15,21 @@
 #    - @projectbluefin/common - Desktop configuration shared with Aurora 
 #    - @ublue-os/brew - Homebrew integration
 #
-# 2. Base Image Options:
+# 2. NVIDIA akmods Stage - Pre-built, Secure Boot signed kernel modules from:
+#    - @ublue-os/akmods-nvidia - NVIDIA proprietary driver kernel modules
+#
+# 3. Base Image Options:
 #    - `ghcr.io/ublue-os/silverblue-main:latest` (Fedora and GNOME)
 #    - `ghcr.io/ublue-os/base-main:latest` (Fedora and no desktop 
 #    - `quay.io/centos-bootc/centos-bootc:stream10 (CentOS-based)` 
 #
 # See: https://docs.projectbluefin.io/contributing/ for architecture diagram
 ###############################################################################
+
+# Import pre-built NVIDIA kernel modules (signed for Secure Boot)
+# Tag must match the Fedora version of the base image (silverblue-main)
+# Note: Renovate can automatically update this tag to a SHA-256 digest
+FROM ghcr.io/ublue-os/akmods-nvidia:main-43 AS akmods_nvidia
 
 # Context stage - combine local and imported OCI container resources
 FROM scratch AS ctx
@@ -60,17 +68,30 @@ FROM ghcr.io/ublue-os/silverblue-main:latest
 ##   - Local build scripts from /build
 ##   - Local custom files from /custom
 ##   - Files from @projectbluefin/common at /oci/common
-##   - Files from @projectbluefin/branding at /oci/branding
-##   - Files from @ublue-os/artwork at /oci/artwork
 ##   - Files from @ublue-os/brew at /oci/brew
-## Scripts are run in numerical order (10-build.sh, 20-example.sh, etc.)
+## Scripts are run in numerical order (10-build.sh, 20-nvidia.sh, 30-epson.sh)
 
+# Main build script (copies config files, installs basic packages)
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build/10-build.sh
-    
+
+# NVIDIA proprietary driver installation
+# Pre-built kernel modules from akmods-nvidia are signed for Secure Boot
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=bind,from=akmods_nvidia,src=/rpms,dst=/tmp/akmods-rpms \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    /ctx/build/20-nvidia.sh
+
+# Epson printer/scanner packages (downloaded from official Epson Download Center)
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
+    /ctx/build/30-epson.sh
+
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
